@@ -43,12 +43,6 @@ public class CrimeListFragment extends ListFragment {
             dateTextView.setText(c.getDate().toString());
             CheckBox solvedCheckBox =
                     (CheckBox)convertView.findViewById(R.id.crime_list_item_solvedCheckBox);
-            solvedCheckBox.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    //v.
-                }
-            });
             solvedCheckBox.setChecked(c.isSolved());
 
             return convertView;

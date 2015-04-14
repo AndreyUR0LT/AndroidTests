@@ -1,6 +1,7 @@
 package com.homich.android.criminalintent;
 
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class CrimeFragment extends android.support.v4.app.Fragment {
 
     public static final String EXTRA_CRIME_ID = "com.homich.android.criminalintent.crime_id";
+    public static final String DIALOG_DATE = "date";
 
     private Crime mCrime;
     private EditText mTitleField;
@@ -63,7 +65,16 @@ public class CrimeFragment extends android.support.v4.app.Fragment {
         CharSequence s = android.text.format.DateFormat.format("EEEE',' MMM d',' yyyy", mCrime.getDate());
         mDateButton.setText(s);
         //mDateButton.setText(mCrime.getDate().toString());
-        mDateButton.setEnabled(false);
+        //mDateButton.setEnabled(false);
+        mDateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager fm = getActivity().getSupportFragmentManager();
+                DatePickerFragment dialog = new DatePickerFragment();
+                dialog.show(fm, DIALOG_DATE);
+            }
+        });
+
 
         mSolvedCheckBox = (CheckBox)v.findViewById(R.id.crime_solved);
         mSolvedCheckBox.setChecked(mCrime.isSolved());

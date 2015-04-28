@@ -1,5 +1,7 @@
 package com.homich.android.criminalintent;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.text.Editable;
@@ -12,6 +14,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -63,8 +66,7 @@ public class CrimeFragment extends android.support.v4.app.Fragment {
 
         mDateButton = (Button)v.findViewById(R.id.crime_date);
 
-        CharSequence s = android.text.format.DateFormat.format("EEEE',' MMM d',' yyyy", mCrime.getDate());
-        mDateButton.setText(s);
+        updateDate();
         //mDateButton.setText(mCrime.getDate().toString());
         //mDateButton.setEnabled(false);
         mDateButton.setOnClickListener(new View.OnClickListener() {
@@ -100,4 +102,20 @@ public class CrimeFragment extends android.support.v4.app.Fragment {
         return fragment;
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != Activity.RESULT_OK) return;
+
+        if (requestCode == REQUEST_DATE){
+            Date date = (Date)data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
+            mCrime.setDate(date);
+            updateDate();
+        }
+    }
+
+    private void updateDate() {
+        CharSequence s = android.text.format.DateFormat.format("EEEE',' MMM d',' yyyy", mCrime.getDate());
+        mDateButton.setText(s);
+    }
 }

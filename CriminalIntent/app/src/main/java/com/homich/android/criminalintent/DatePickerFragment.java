@@ -59,8 +59,7 @@ public class DatePickerFragment extends DialogFragment {
                     public void onClick(DialogInterface dialog, int which) {
                         sendResult(Activity.RESULT_OK);
                     }
-                }).
-                create();
+                }).create();
     }
 
     private void sendResult(int resultCode){

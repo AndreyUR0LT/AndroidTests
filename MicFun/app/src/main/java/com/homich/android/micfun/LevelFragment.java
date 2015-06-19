@@ -3,12 +3,11 @@ package com.homich.android.micfun;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.text.Editable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 /**
@@ -18,6 +17,7 @@ public class LevelFragment extends Fragment {
 
     private TextView mLevelField;
     private Button mStartButton;
+    MicPool<String> mMicPoolThread;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -35,10 +35,26 @@ public class LevelFragment extends Fragment {
         mStartButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mStartButton.setText("Her");
+                //mLevelField.setText("Her");
+                //mStartButton.setText("vam");
+
+                mMicPoolThread = new MicPool<String>();
+                mMicPoolThread.start();
+                mMicPoolThread.getLooper();
+                Log.i("START", "Background thread started");
+                mMicPoolThread.queuePool("Test");
             }
         });
 
         return v;
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mMicPoolThread.quit();
+        Log.i("START", "Background thread destroyed");
+    }
+
+
 }

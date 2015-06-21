@@ -22,6 +22,16 @@ public class MicPool<Token> extends HandlerThread {
     {
         Log.i(TAG, "Test pool");
 
+        if (token == null){
+            Log.i(TAG, "Token is NULL");
+            return;
+        }
+
+        if (mHandler == null){
+            Log.i(TAG, "mHandler is NULL");
+            return;
+        }
+
         mHandler.obtainMessage(MIC_POOL_MESSAGE, token).sendToTarget();
     }
 
@@ -33,10 +43,12 @@ public class MicPool<Token> extends HandlerThread {
             public void handleMessage(Message msg) {
                 if (msg.what == MIC_POOL_MESSAGE){
                     Token token = (Token)msg.obj;
-                    //Log.i(TAG, "Req:" + )
+                    Log.i(TAG, "handleMessage:");
                 }
             };
         };
+
+        Log.i(TAG, "onLooperPrepared:");
     }
 
 }

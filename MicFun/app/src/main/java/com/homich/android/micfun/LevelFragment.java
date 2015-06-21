@@ -1,6 +1,8 @@
 package com.homich.android.micfun;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -17,7 +19,9 @@ public class LevelFragment extends Fragment {
 
     private TextView mLevelField;
     private Button mStartButton;
-    MicPool<String> mMicPoolThread;
+    //MicPool<String> mMicPoolThread;
+    private MicPoolRunnable mMicPoolRunnable;
+    private Thread mMicPoolThread;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -35,14 +39,37 @@ public class LevelFragment extends Fragment {
         mStartButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                Handler handler = new Handler(){
+                    @Override
+                    public void handleMessage(Message msg) {
+                        super.handleMessage(msg);
+
+                        Bundle bundle = msg.getData();
+                        int[] arr = bundle.getIntArray(MicPoolRunnable.ARRAY_TAG);
+
+                        //TextView mLevelField = (TextView)v.findViewById(R.id.mic_level);
+                        mLevelField.setText(Integer.toString(arr[3]));
+                        //mLevelField.setText("Test");
+                    }
+                };
+
+                mMicPoolRunnable = new MicPoolRunnable(handler);
+                mMicPoolThread = new Thread(mMicPoolRunnable);
+                mMicPoolThread.start();
+
+
+                Log.i("START", "Background thread started");
+
                 //mLevelField.setText("Her");
                 //mStartButton.setText("vam");
-
+/*
                 mMicPoolThread = new MicPool<String>();
                 mMicPoolThread.start();
                 mMicPoolThread.getLooper();
                 Log.i("START", "Background thread started");
                 mMicPoolThread.queuePool("Test");
+*/
             }
         });
 
@@ -52,7 +79,11 @@ public class LevelFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mMicPoolThread.quit();
+        //mMicPoolThread.quit();
+        if (mMicPoolThread != null) {
+            mMicPoolThread.interrupt();
+            mMicPoolThread = null;
+        }
         Log.i("START", "Background thread destroyed");
     }
 

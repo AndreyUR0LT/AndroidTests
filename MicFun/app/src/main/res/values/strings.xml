@@ -4,4 +4,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="mic_level_hint">Level</string>
+    <string name="button_start_start">START</string>
+    <string name="button_start_stop">STOP</string>
 </resources>

@@ -10,6 +10,7 @@ import android.os.Message;
 public class MicPoolRunnable implements Runnable {
 
     public static final String ARRAY_TAG = "ARRAY";
+    public static int Counter = 0;
 
     private Handler mHandler;
 
@@ -23,6 +24,8 @@ public class MicPoolRunnable implements Runnable {
 
         for (int i = 0; i < arr.length; i++)
             arr[i] = i;
+
+        arr[3] = Counter++;
 
         try {
             Thread.sleep(5000);

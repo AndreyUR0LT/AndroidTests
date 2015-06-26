@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/start_button"
         android:layout_gravity="center_horizontal"
-        android:text="Start"
+        android:text="@string/button_start_start"
         android:textSize="48dp" />
 
 

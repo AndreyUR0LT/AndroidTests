@@ -22,6 +22,7 @@ public class LevelFragment extends Fragment {
     //MicPool<String> mMicPoolThread;
     private MicPoolRunnable mMicPoolRunnable;
     private Thread mMicPoolThread;
+    private boolean isMicPoolThreadRunning = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -40,7 +41,7 @@ public class LevelFragment extends Fragment {
             @Override
             public void onClick(View view) {
 
-                Handler handler = new Handler(){
+                Handler handler = new Handler() {
                     @Override
                     public void handleMessage(Message msg) {
                         super.handleMessage(msg);
@@ -54,12 +55,18 @@ public class LevelFragment extends Fragment {
                     }
                 };
 
-                mMicPoolRunnable = new MicPoolRunnable(handler);
-                mMicPoolThread = new Thread(mMicPoolRunnable);
-                mMicPoolThread.start();
-
-
-                Log.i("START", "Background thread started");
+                if (isMicPoolThreadRunning) {
+                    MicPoolThreadStop();
+                    mStartButton.setText(R.string.button_start_start);
+                    isMicPoolThreadRunning = false;
+                } else {
+                    mMicPoolRunnable = new MicPoolRunnable(handler);
+                    mMicPoolThread = new Thread(mMicPoolRunnable);
+                    mMicPoolThread.start();
+                    mStartButton.setText(R.string.button_start_stop);
+                    Log.i("START", "Background thread started");
+                    isMicPoolThreadRunning = true;
+                }
 
                 //mLevelField.setText("Her");
                 //mStartButton.setText("vam");
@@ -80,12 +87,16 @@ public class LevelFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         //mMicPoolThread.quit();
-        if (mMicPoolThread != null) {
-            mMicPoolThread.interrupt();
-            mMicPoolThread = null;
-        }
-        Log.i("START", "Background thread destroyed");
+        MicPoolThreadStop();
     }
 
+    private void MicPoolThreadStop(){
+        if (mMicPoolThread != null) {
+            Thread dummy = mMicPoolThread;
+            dummy.interrupt();
+            mMicPoolThread = null;
+            Log.i("START", "Background thread destroyed");
+        }
+    }
 
 }

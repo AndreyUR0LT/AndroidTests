@@ -12,6 +12,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.math.BigInteger;
+
 /**
  * Created by samarin on 15-Jun-15.
  */
@@ -47,10 +49,23 @@ public class LevelFragment extends Fragment {
                         super.handleMessage(msg);
 
                         Bundle bundle = msg.getData();
-                        int[] arr = bundle.getIntArray(MicPoolRunnable.ARRAY_TAG);
+                        short[] arr = bundle.getShortArray(MicPoolRunnable.PCM_ARRAY_TAG);
+                        int size = bundle.getInt(MicPoolRunnable.PCM_ARRAY_SIZE_TAG);
+
+                        long sum = 0;
+                        //BigInteger bigInteger = BigInteger.ZERO;
+                        for (int i = 0; i < size; i++) {
+                            sum += arr[i] + (Short.MAX_VALUE / 2);
+                            //bigInteger = bigInteger.add(BigInteger.valueOf(arr[i]));
+                        }
+
+                        long result = sum / size;
+                        //long result = bigInteger.divide(BigInteger.valueOf(size)).longValue();
+
+                        mLevelField.setText(Long.toString(result));
 
                         //TextView mLevelField = (TextView)v.findViewById(R.id.mic_level);
-                        mLevelField.setText(Integer.toString(arr[3]));
+                        //mLevelField.setText(Integer.toString(arr[3]));
                         //mLevelField.setText("Test");
                     }
                 };
@@ -92,6 +107,7 @@ public class LevelFragment extends Fragment {
 
     private void MicPoolThreadStop(){
         if (mMicPoolThread != null) {
+            mMicPoolRunnable.StopRecording();
             Thread dummy = mMicPoolThread;
             dummy.interrupt();
             mMicPoolThread = null;

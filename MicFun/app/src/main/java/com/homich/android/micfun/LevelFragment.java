@@ -49,20 +49,21 @@ public class LevelFragment extends Fragment {
                         super.handleMessage(msg);
 
                         Bundle bundle = msg.getData();
-                        short[] arr = bundle.getShortArray(MicPoolRunnable.PCM_ARRAY_TAG);
+                        double[] arr = bundle.getDoubleArray(MicPoolRunnable.PCM_ARRAY_TAG);
                         int size = bundle.getInt(MicPoolRunnable.PCM_ARRAY_SIZE_TAG);
 
-                        long sum = 0;
+                        double sum = 0;
                         //BigInteger bigInteger = BigInteger.ZERO;
                         for (int i = 0; i < size; i++) {
-                            sum += arr[i] + (Short.MAX_VALUE / 2);
+                            //sum += arr[i] + (Short.MAX_VALUE / 2);
+                            sum += arr[i];
                             //bigInteger = bigInteger.add(BigInteger.valueOf(arr[i]));
                         }
 
-                        long result = sum / size;
+                        double result = sum / size;
                         //long result = bigInteger.divide(BigInteger.valueOf(size)).longValue();
 
-                        mLevelField.setText(Long.toString(result));
+                        mLevelField.setText(Double.toString(result));
 
                         //TextView mLevelField = (TextView)v.findViewById(R.id.mic_level);
                         //mLevelField.setText(Integer.toString(arr[3]));

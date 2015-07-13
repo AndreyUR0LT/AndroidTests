@@ -41,12 +41,12 @@ public class MicPoolRunnable implements Runnable {
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
         int bufferSize = 0;
-        short[] buffer = null;
+        byte[] bufferData = null;
         isRecording = true;
 
         try {
             bufferSize = AudioRecord.getMinBufferSize(freq, channelConfiguration, audioEncoding);
-            buffer = new short[bufferSize];
+            bufferData = new byte[bufferSize];
             audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     freq, channelConfiguration, audioEncoding, bufferSize);
 
@@ -68,12 +68,28 @@ public class MicPoolRunnable implements Runnable {
         while (isRecording)
         {
             try {
-                int bufferReadResult = audioRecord.read(buffer, 0, bufferSize);
+                int bufferReadResult = audioRecord.read(bufferData, 0, bufferSize);
+
+                double[] micBufferData = new double[bufferSize];
+                final int bytesPerSample = 2; // As it is 16bit PCM
+                final double amplification = 100.0; // choose a number as you like
+                for (int index = 0, floatIndex = 0; index < bufferReadResult - bytesPerSample + 1; index += bytesPerSample, floatIndex++) {
+                    double sample = 0;
+                    for (int b = 0; b < bytesPerSample; b++) {
+                        int v = bufferData[index + b];
+                        if (b < bytesPerSample - 1 || bytesPerSample == 1) {
+                            v &= 0xFF;
+                        }
+                        sample += v << (b * 8);
+                    }
+                    double sample32 = amplification * (sample / 32768.0);
+                    micBufferData[floatIndex] = sample32;
+                }
 
                 Message msg = mHandler.obtainMessage();
                 Bundle bundle = new Bundle();
-                bundle.putShortArray(PCM_ARRAY_TAG, buffer);
-                bundle.putInt(PCM_ARRAY_SIZE_TAG, bufferReadResult);
+                bundle.putDoubleArray(PCM_ARRAY_TAG, micBufferData);
+                bundle.putInt(PCM_ARRAY_SIZE_TAG, bufferReadResult / 2);
                 msg.setData(bundle);
                 mHandler.sendMessage(msg);
 

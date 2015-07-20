@@ -12,6 +12,11 @@
         android:textSize="48dp"
         android:hint="@string/mic_level_hint" />
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

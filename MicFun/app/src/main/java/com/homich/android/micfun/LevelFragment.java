@@ -1,5 +1,9 @@
 package com.homich.android.micfun;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -10,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.math.BigInteger;
@@ -20,6 +25,7 @@ import java.math.BigInteger;
 public class LevelFragment extends Fragment {
 
     private TextView mLevelField;
+    private ImageView mImageView;
     private Button mStartButton;
     //MicPool<String> mMicPoolThread;
     private MicPoolRunnable mMicPoolRunnable;
@@ -38,6 +44,14 @@ public class LevelFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_level, container, false);
 
         mLevelField = (TextView)v.findViewById(R.id.mic_level);
+
+        mImageView = (ImageView)v.findViewById(R.id.imageView);
+        Bitmap bitmap = Bitmap.createBitmap((int) 256, (int) 100, Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(bitmap);
+        final Paint paint = new Paint();
+        paint.setColor(Color.GREEN);
+        mImageView.setImageBitmap(bitmap);
+
         mStartButton = (Button)v.findViewById(R.id.start_button);
         mStartButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,6 +66,15 @@ public class LevelFragment extends Fragment {
                         double[] arr = bundle.getDoubleArray(MicPoolRunnable.PCM_ARRAY_TAG);
                         int size = bundle.getInt(MicPoolRunnable.PCM_ARRAY_SIZE_TAG);
 
+                        canvas.drawColor(Color.BLACK);
+                        for (int i = 0; i < arr.length; i++){
+                            int x = i;
+                            int downy = (int)(100 - (arr[i] * 10));
+                            int upy = 100;
+                            canvas.drawLine(x, downy, x, upy, paint);
+                        }
+                        mImageView.invalidate();
+/*
                         double sum = 0;
                         //BigInteger bigInteger = BigInteger.ZERO;
                         for (int i = 0; i < size; i++) {
@@ -64,7 +87,7 @@ public class LevelFragment extends Fragment {
                         //long result = bigInteger.divide(BigInteger.valueOf(size)).longValue();
 
                         mLevelField.setText(Double.toString(result));
-
+*/
                         //TextView mLevelField = (TextView)v.findViewById(R.id.mic_level);
                         //mLevelField.setText(Integer.toString(arr[3]));
                         //mLevelField.setText("Test");

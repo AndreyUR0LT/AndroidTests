@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import ca.uol.aig.fftpack.RealDoubleFFT;
 
 /**
  * Created by root on 21.06.15.
@@ -41,12 +42,13 @@ public class MicPoolRunnable implements Runnable {
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
         int bufferSize = 0;
-        byte[] bufferData = null;
+        short[] bufferData = null;
         isRecording = true;
+        int blockSize = 256;
 
         try {
             bufferSize = AudioRecord.getMinBufferSize(freq, channelConfiguration, audioEncoding);
-            bufferData = new byte[bufferSize];
+            bufferData = new short[bufferSize];
             audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     freq, channelConfiguration, audioEncoding, bufferSize);
 
@@ -65,12 +67,15 @@ public class MicPoolRunnable implements Runnable {
             return;
         }
 
+        RealDoubleFFT transformer = new RealDoubleFFT(blockSize);
+
         while (isRecording)
         {
             try {
                 int bufferReadResult = audioRecord.read(bufferData, 0, bufferSize);
 
-                double[] micBufferData = new double[bufferSize];
+                double[] micBufferData = new double[blockSize];
+/*
                 final int bytesPerSample = 2; // As it is 16bit PCM
                 final double amplification = 100.0; // choose a number as you like
                 for (int index = 0, floatIndex = 0; index < bufferReadResult - bytesPerSample + 1; index += bytesPerSample, floatIndex++) {
@@ -85,6 +90,11 @@ public class MicPoolRunnable implements Runnable {
                     double sample32 = amplification * (sample / 32768.0);
                     micBufferData[floatIndex] = sample32;
                 }
+*/
+                for (int i = 0; i < blockSize && i < bufferReadResult; i++)
+                    micBufferData[i] = (double)bufferData[i]/(Short.MAX_VALUE / 2);
+
+                transformer.ft(micBufferData);
 
                 Message msg = mHandler.obtainMessage();
                 Bundle bundle = new Bundle();

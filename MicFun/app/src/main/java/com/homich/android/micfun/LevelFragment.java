@@ -1,5 +1,6 @@
 package com.homich.android.micfun;
 
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,7 +10,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +38,8 @@ public class LevelFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //setRetainInstance(true);
+        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
     @Nullable
@@ -43,10 +48,17 @@ public class LevelFragment extends Fragment {
         //return super.onCreateView(inflater, container, savedInstanceState);
         View v = inflater.inflate(R.layout.fragment_level, container, false);
 
+        v.setBackgroundColor(Color.BLACK);
         mLevelField = (TextView)v.findViewById(R.id.mic_level);
+        mLevelField.setBackgroundColor(Color.GRAY);
 
         mImageView = (ImageView)v.findViewById(R.id.imageView);
-        Bitmap bitmap = Bitmap.createBitmap((int) 256, (int) 100, Bitmap.Config.ARGB_8888);
+        DisplayMetrics displaymetrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        final int widthPixels = displaymetrics.widthPixels;
+        final int heightPixels = 300;
+
+        Bitmap bitmap = Bitmap.createBitmap((int) widthPixels, (int) heightPixels, Bitmap.Config.ARGB_8888);
         final Canvas canvas = new Canvas(bitmap);
         final Paint paint = new Paint();
         paint.setColor(Color.GREEN);
@@ -68,12 +80,15 @@ public class LevelFragment extends Fragment {
 
                         canvas.drawColor(Color.BLACK);
                         for (int i = 0; i < arr.length; i++){
-                            int x = i;
-                            int downy = (int)(100 - (arr[i] * 10));
-                            int upy = 100;
+                            int x = (i * widthPixels) / arr.length;
+                            int downy = (int)(heightPixels - (arr[i] * 10 * (heightPixels / 100)));
+                            int upy = heightPixels;
                             canvas.drawLine(x, downy, x, upy, paint);
                         }
                         mImageView.invalidate();
+
+                        mLevelField.setText(Integer.toString(size));
+                        mLevelField.invalidate();
 /*
                         double sum = 0;
                         //BigInteger bigInteger = BigInteger.ZERO;

@@ -6,7 +6,14 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.util.CircularArray;
 import android.util.Log;
+
+import java.nio.Buffer;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import ca.uol.aig.fftpack.RealDoubleFFT;
 
 /**
@@ -21,6 +28,8 @@ public class MicPoolRunnable implements Runnable {
     private Handler mHandler;
     private AudioRecord audioRecord;
     private boolean isRecording;
+    private DoublesCircularBuffer mDoublesCircularBuffer;
+    private Thread mFftTransformTask;
 
     public MicPoolRunnable(Handler handler){
         mHandler = handler;
@@ -38,16 +47,19 @@ public class MicPoolRunnable implements Runnable {
 
     private void GetDataFromMic(){
 
-        int freq = 44100;
+        //int freq = 44100;
+        int freq = 8000;
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
         int bufferSize = 0;
         short[] bufferData = null;
         isRecording = true;
         int blockSize = 256;
+        final Queue<double[]> queue = new LinkedList<double[]>();
 
         try {
             bufferSize = AudioRecord.getMinBufferSize(freq, channelConfiguration, audioEncoding);
+            mDoublesCircularBuffer = new DoublesCircularBuffer(bufferSize);
             bufferData = new short[bufferSize];
             audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     freq, channelConfiguration, audioEncoding, bufferSize);
@@ -67,12 +79,18 @@ public class MicPoolRunnable implements Runnable {
             return;
         }
 
+        FftRunnable fftRunnable = new FftRunnable(queue, blockSize, mHandler);
+
+        mFftTransformTask = new Thread(fftRunnable);
+        //mFftTransformTask.start();
+
         RealDoubleFFT transformer = new RealDoubleFFT(blockSize);
 
         while (isRecording)
         {
             try {
-                int bufferReadResult = audioRecord.read(bufferData, 0, bufferSize);
+                //int bufferReadResult = audioRecord.read(bufferData, 0, bufferSize);
+                int bufferReadResult = audioRecord.read(bufferData, 0, blockSize);
 
                 double[] micBufferData = new double[blockSize];
 /*
@@ -91,17 +109,33 @@ public class MicPoolRunnable implements Runnable {
                     micBufferData[floatIndex] = sample32;
                 }
 */
+/*
                 for (int i = 0; i < blockSize && i < bufferReadResult; i++)
                     micBufferData[i] = (double)bufferData[i]/(Short.MAX_VALUE / 2);
+*/
+                int dataToTransformSize = blockSize > bufferReadResult ? blockSize : bufferReadResult;
 
-                transformer.ft(micBufferData);
+                for (int i = 0; i < dataToTransformSize; i++)
+                    mDoublesCircularBuffer.add((double)bufferData[i]/(Short.MAX_VALUE / 2));
 
-                Message msg = mHandler.obtainMessage();
-                Bundle bundle = new Bundle();
-                bundle.putDoubleArray(PCM_ARRAY_TAG, micBufferData);
-                bundle.putInt(PCM_ARRAY_SIZE_TAG, bufferReadResult / 2);
-                msg.setData(bundle);
-                mHandler.sendMessage(msg);
+                while (mDoublesCircularBuffer.getSize() > blockSize){
+                    double[] dataToTransorm = new double[blockSize];
+                    for (int i = 0; i < blockSize; i++)
+                        dataToTransorm[i] = mDoublesCircularBuffer.get();
+
+                    //queue.add(dataToTransorm);
+
+                    transformer.ft(dataToTransorm);
+
+                    Message msg = mHandler.obtainMessage();
+                    Bundle bundle = new Bundle();
+                    bundle.putDoubleArray(MicPoolRunnable.PCM_ARRAY_TAG, dataToTransorm);
+                    bundle.putInt(MicPoolRunnable.PCM_ARRAY_SIZE_TAG, queue.size());
+                    msg.setData(bundle);
+                    mHandler.sendMessage(msg);
+
+
+                }
 
             }
             catch (Throwable t){
@@ -110,6 +144,11 @@ public class MicPoolRunnable implements Runnable {
         }
         audioRecord.stop();
         audioRecord.release();
+
+        Thread dummy = mFftTransformTask;
+        dummy.interrupt();
+        mFftTransformTask = null;
+
     }
 
 }

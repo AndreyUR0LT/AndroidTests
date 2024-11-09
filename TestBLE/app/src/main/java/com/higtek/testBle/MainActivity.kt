@@ -74,6 +74,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -92,6 +95,8 @@ lateinit var  bluetoothManager : BluetoothManager
 
 private var scanning = false
 private val handlerForBleScan = Handler()
+
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 //************************************************************************************************
 /*
@@ -324,12 +329,12 @@ fun TagList(messages: List<String>) {
 @Composable
 fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
 
-/*
+
     if(mainDataClass.isAuth == false) {
         navController.navigate(NavRoutes.Login.route)
         return
     }
-*/
+
 
     // State variables to store user input
     val userName = rememberSaveable {

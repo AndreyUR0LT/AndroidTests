@@ -71,17 +71,6 @@ fun SettingsScreen(navController: NavController, mainDataClass: MainDataClass) {
                         )
                     }
                 },
-                /*
-                                actions = {
-                                    IconButton(onClick = { /* do something */ }) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Settings,
-                                            contentDescription = "Settings"
-                                        )
-                                    }
-                                },
-
-                 */
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -131,10 +120,6 @@ fun SettingsScreen(navController: NavController, mainDataClass: MainDataClass) {
                 )
             }
 
-            //MenuWithScrollStateSample()
-            //MultiAutocompleteExposedDropdownMenuSample()
-            //ExposedDropdownMenuSample()
-            //EditableExposedDropdownMenuSample()
         }
 
     }

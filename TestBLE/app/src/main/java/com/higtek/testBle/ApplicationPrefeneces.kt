@@ -1,10 +1,7 @@
 package com.higtek.testBle
 
 import android.content.Context
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -30,7 +27,6 @@ fun getServerUrl(context : Context) : Flow<String>{
 suspend fun setServerUrl(context : Context, value : String){
 
     context.dataStore.edit { settings ->
-        //val currentValue = settings[SERVER_URL] ?: "http://192.168.1.120:83/TransportWebService.asmx"
         settings[SERVER_URL] = value
     }
 }

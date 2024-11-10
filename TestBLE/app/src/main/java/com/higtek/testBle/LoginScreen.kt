@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -33,7 +32,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -78,16 +76,6 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
                         overflow = TextOverflow.Ellipsis
                     )
                 },
-                /*
-                                navigationIcon = {
-                                    IconButton(onClick = { /* do something */ }) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                            contentDescription = "Back"
-                                        )
-                                    }
-                                },
-                */
                 actions = {
                     IconButton(onClick = { navController.navigate(NavRoutes.Settings.route) }) {
                         Icon(
@@ -108,24 +96,7 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
                 .padding(80.dp)
         ) {
 
-/*
-            // Username input field
-            OutlinedTextField(
-                value = userName.value, onValueChange = {
-                    userName.value = it
-                },
-                leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = "person")
-                },
-                label = {
-                    Text(text = "Username")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(0.dp, 20.dp, 0.dp, 0.dp)
-            )
-*/
-
+            // User select field
             LoginField(mainDataClass.listOfUserNames.toList(), userNameTextFieldState)
 
             // Password input field
@@ -179,11 +150,9 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginField(listOfUserNames: List<String>, userNameTextFieldState: TextFieldState) {
-    //val options: List<String> = SampleData
-    //val options: List<String> = mutableStateListOf<String>("One", "Two", "Four", "Four1", "Four2")
+
     val options: List<String> = listOfUserNames
 
-    //val textFieldState = rememberTextFieldState()
     val textFieldState = userNameTextFieldState
 
     // The text that the user inputs into the text field can be used to filter the options.
@@ -233,7 +202,6 @@ fun LoginField(listOfUserNames: List<String>, userNameTextFieldState: TextFieldS
                 DropdownMenuItem(
                     text = { Text(option, style = MaterialTheme.typography.bodyLarge) },
                     onClick = {
-                        //textFieldState.setTextAndPlaceCursorAtEnd(option.text)
                         textFieldState.setTextAndPlaceCursorAtEnd(option)
                         setExpanded(false)
                     },

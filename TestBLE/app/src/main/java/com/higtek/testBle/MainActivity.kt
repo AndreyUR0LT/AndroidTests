@@ -71,18 +71,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.higtek.testBle.ui.theme.TestBLETheme
 import kotlinx.coroutines.launch
-
-
-//import org.ksoap2.SoapEnvelope
-//import com.google.code.ksoap2
-import org.ksoap2.SoapEnvelope
 import org.ksoap2.serialization.SoapObject
 
 
 var mainDataClass = MainDataClass(false)
-//var _tags = mutableStateListOf<String>("One", "Two")
-
-//lateinit var  bluetoothLeScanner : BluetoothLeScanner
 var  bluetoothLeScanner : BluetoothLeScanner? = null
 lateinit var  bluetoothAdapter : BluetoothAdapter
 lateinit var  bluetoothManager : BluetoothManager
@@ -99,38 +91,6 @@ fun TestSoap() {
 
 }
 //************************************************************************************************
-/*
-fun requestBluetooth() {
-    // check android 12+
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        requestMultiplePermissions.launch(
-            arrayOf(
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-            )
-        )
-    } else {
-        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        requestEnableBluetooth.launch(enableBtIntent)
-    }
-}
-
-private val requestEnableBluetooth =
-    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            // granted
-        } else {
-            // denied
-        }
-    }
-
-private val requestMultiplePermissions =
-    registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        permissions.entries.forEach {
-            Log.d("MyTag", "${it.key} = ${it.value}")
-        }
-    }
-*/
 //************************************************************************************************
 
 class MainActivity : ComponentActivity() {
@@ -140,51 +100,6 @@ class MainActivity : ComponentActivity() {
 
         bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
-        //bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-
-/*
-        val requestEnableBluetooth =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    // granted
-                } else {
-                    // denied
-                }
-            }
-
-        val requestMultiplePermissions =
-            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-                permissions.entries.forEach {
-                    Log.d("MyTag", "${it.key} = ${it.value}")
-                }
-            }
-
-        val locationPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
-        //val locationPermission = android.Manifest.permission.ACCESS_COARSE_LOCATION
-        val requestLocationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                //connectHC05(bluetoothAdapter, deviceList, connectStatus)
-            } else {
-                //connectStatus.value = "Location Permission not accepted"
-            }
-        }
-
-        //Check whether the user has already granted the runtime permission
-        if (ContextCompat.checkSelfPermission(applicationContext, locationPermission) == PackageManager.PERMISSION_GRANTED) {
-            //connectHC05(bluetoothAdapter, deviceList, connectStatus)
-            val i = 0
-        } else {
-            //requestLocationPermissionLauncher.launch(locationPermission)
-            requestMultiplePermissions.launch(
-                arrayOf(
-                    android.Manifest.permission.BLUETOOTH_SCAN,
-                    android.Manifest.permission.BLUETOOTH_CONNECT,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                )
-            )
-        }
-*/
 
         setContent {
             TestBLETheme {
@@ -204,25 +119,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-        Text("Huy11111111")
-
-        Text(
-            text = "Hello $name!",
-            modifier = modifier
-        )
-
-        Text("Huy000000000")
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     TestBLETheme {
-        //Greeting("Android")
         MainScreen(MainDataClass(false))
     }
 }
@@ -244,64 +144,12 @@ fun MainScreen(mainDataClass: MainDataClass) {
     Column(Modifier.padding(8.dp)) {
          NavHost(navController, startDestination = NavRoutes.Home.route) {
             composable(NavRoutes.Home.route) { HomeScreen(navController, mainDataClass) }
-            //composable(NavRoutes.Login.route) { Login(navController)  }
-             composable(NavRoutes.Login.route) { LoginScreen(navController, mainDataClass) }
-             composable(NavRoutes.Settings.route) { SettingsScreen(navController, mainDataClass)  }
+            composable(NavRoutes.Login.route) { LoginScreen(navController, mainDataClass) }
+            composable(NavRoutes.Settings.route) { SettingsScreen(navController, mainDataClass)  }
             composable(NavRoutes.About.route) { About() }
         }
     }
-
-/*
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        LoginScreen(
-            modifier = Modifier.padding(innerPadding)
-        )
-    }
-*/
 }
-
-
-@Composable
-fun LoginScreen(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-
-        Text("Huy11111111!!!!!!!!!!!!!!!!!!!!!")
-
-        Text(
-            text = "Hello Stariy Her",
-            modifier = modifier
-        )
-
-        Text("Huy000000000")
-    }
-}
-
-
-@Composable
-fun Home(navController: NavController, mainDataClass: MainDataClass){
-
-    if(mainDataClass.isAuth == false) {
-        navController.navigate(NavRoutes.Login.route)
-        return
-    }
-
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-        Text("Home Page", fontSize = 30.sp)
-        Button(onClick = {navController.navigate(NavRoutes.Login.route)} ) { Text("To Login")}
-    }
-}
-
-@Composable
-fun Login(navController: NavController){
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-        Text("Contact Page", fontSize = 30.sp)
-        Button(onClick = {navController.navigate(NavRoutes.Home.route)} ) { Text("Back")}
-    }
-
-    // Suppress Back Button.
-    BackHandler {  }
-}
-
 
 
 @Composable
@@ -329,17 +177,16 @@ fun TagList(messages: List<String>) {
 @Composable
 fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
 
-
     if(mainDataClass.isAuth == false) {
         navController.navigate(NavRoutes.Login.route)
         return
     }
 
-
     // State variables to store user input
     val userName = rememberSaveable {
         mutableStateOf("")
     }
+
     val userPassword = rememberSaveable {
         mutableStateOf("")
     }
@@ -391,20 +238,6 @@ fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
                 .padding(80.dp)
         ) {
 
-/*
-            // top row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .background(Color.Yellow),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "Top")
-            }
-*/
-            // content row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -412,30 +245,9 @@ fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                //Text(text = "Some Other Contents")
                 TagList(mainDataClass.tags.toList())
-
-/*
-                Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                )
-                {
-                    for( v in 0..10)
-                        Text(text = "ttt $v")
-
-                    Text(text = "Tag 0")
-                    Text(text = "Tag 1")
-                    Text(text = "Tag 2")
-                    Text(text = "Tag 3")
-                    Text(text = "Tag 4")
-                    Text(text = "Tag 5")
-
-                }
-*/
             }
 
-            // bottom row
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -446,12 +258,11 @@ fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
                     onClick = {
 
                         composableScope.launch {
-                            //mainDataClass.tags.add("Hren")
+
                             if(!scanning)
                                 mainDataClass.tags.clear()
 
-                            //checkPermissions(requestMultiplePermissions)
-                            if(!check2(curContext, requestMultiplePermissions)){
+                            if(!checkPermissions(curContext, requestMultiplePermissions)){
                                 Toast.makeText(curContext, "Please grant the application permissions", Toast.LENGTH_LONG).show()
                                 return@launch
                             }
@@ -486,30 +297,7 @@ fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ScaffoldSnackbarDemo() {
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val count = remember{ mutableStateOf(0) }
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(
-                content = {Icon(Icons.Filled.Warning, contentDescription = "Добавить")},
-                onClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Count: ${++count.value}")
-                    }
-                }
-            )
-        }
-    ){
-        Text("Count: ${count.value}", fontSize = 28.sp, modifier=Modifier.padding(it))
-    }
-}
-
-fun check2(curContext: Context, requestMultiplePermissions: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>): Boolean {
+fun checkPermissions(curContext: Context, requestMultiplePermissions: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>): Boolean {
 
     var isPermGranted : Boolean = false
 
@@ -522,13 +310,9 @@ fun check2(curContext: Context, requestMultiplePermissions: ManagedActivityResul
             isPermGranted = true
 
     } else {
-//        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-//        requestEnableBluetooth.launch(enableBtIntent)
         if (ContextCompat.checkSelfPermission(curContext, locationPermission) == PackageManager.PERMISSION_GRANTED)
             isPermGranted = true
     }
-
-
 
     if(!isPermGranted) {
 
@@ -545,84 +329,6 @@ fun check2(curContext: Context, requestMultiplePermissions: ManagedActivityResul
     }
 
     return true
-}
-
-
-/*
-private var requestBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-    if (result.resultCode == RESULT_OK) {
-        //granted
-    }else{
-        //deny
-    }
-}
-
-var activityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
-    ActivityResultContracts.StartActivityForResult()
-) { result ->
-    if (result.getResultCode() !== MainActivity.RESULT_OK) {
-        promptEnableBluetooth()
-    }
-}
-*/
-/*
-private fun promptEnableBluetooth() {
-    if (!bluetoothAdapter.isEnabled) {
-        val enableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        //activityResultLauncher.launch(enableIntent)
-        //startActivityForResult(enableIntent, 1)
-    }
-}
-
-*/
-/*
-fun <I, O> Activity.registerForActivityResult(
-    contract: ActivityResultContract<I, O>,
-    callback: ActivityResultCallback<O>
-) = (this as ComponentActivity).registerForActivityResult(contract, callback)
-*/
-
-//@Composable
-private fun checkPermissions(requestMultiplePermissions: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>){
-
-/*
-    val requestMultiplePermissions =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-            permissions.entries.forEach {
-                Log.d("MyTag", "${it.key} = ${it.value}")
-            }
-        }
-*/
-/*
-    val locationPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
-    //val locationPermission = android.Manifest.permission.ACCESS_COARSE_LOCATION
-    val requestLocationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-        if (isGranted) {
-            //connectHC05(bluetoothAdapter, deviceList, connectStatus)
-        } else {
-            //connectStatus.value = "Location Permission not accepted"
-        }
-    }
-*/
-/*
-    //Check whether the user has already granted the runtime permission
-    val locationPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
-    if (ContextCompat.checkSelfPermission(LocalContext.current, locationPermission) == PackageManager.PERMISSION_GRANTED) {
-        //connectHC05(bluetoothAdapter, deviceList, connectStatus)
-        val i = 0
-    } else {
-        //requestLocationPermissionLauncher.launch(locationPermission)
-
-        requestMultiplePermissions.launch(
-            arrayOf(
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION,
-            )
-        )
-    }
-*/
 }
 
 // Stops scanning after 10 seconds.

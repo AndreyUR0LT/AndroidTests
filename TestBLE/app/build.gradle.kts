@@ -65,9 +65,6 @@ dependencies {
     implementation(libs.androidx.material)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.datastore.preferences)
-    //    implementation(files("libs\\ksoap2-android-assembly-3.6.4-jar-with-dependencies.jar")) {
-//        exclude(group = "com.squareup.okio", module = "okio-jvm-3.4.0")
-//    }
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -85,6 +82,5 @@ dependencies {
 
     // KSOAP2
     implementation("com.google.code.ksoap2-android:ksoap2-android:3.6.4")
-    //implementation ("com.google.code.ksoap2-android:ksoap2-android:3.3.0")
 
 }

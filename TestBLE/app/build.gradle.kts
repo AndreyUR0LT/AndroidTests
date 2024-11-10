@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -64,6 +65,9 @@ dependencies {
     implementation(libs.androidx.material)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.datastore.preferences)
+    //    implementation(files("libs\\ksoap2-android-assembly-3.6.4-jar-with-dependencies.jar")) {
+//        exclude(group = "com.squareup.okio", module = "okio-jvm-3.4.0")
+//    }
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -71,5 +75,16 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Retrofit
+    //implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // Retrofit with Scalar Converter
+    //implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
+    // XML
+    //implementation("com.squareup.retrofit2:converter-simplexml:2.11.0")
+
+    // KSOAP2
+    implementation("com.google.code.ksoap2-android:ksoap2-android:3.6.4")
+    //implementation ("com.google.code.ksoap2-android:ksoap2-android:3.3.0")
 
 }

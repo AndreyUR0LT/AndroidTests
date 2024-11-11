@@ -32,8 +32,10 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +45,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.ksoap2.SoapEnvelope
+import org.ksoap2.serialization.SoapObject
+import org.ksoap2.serialization.SoapSerializationEnvelope
+import org.ksoap2.transport.HttpTransportSE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +69,8 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
     val userNameTextFieldState = rememberTextFieldState()
 
     val curContext = LocalContext.current
+
+    val composableScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -123,6 +133,11 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
                     //mainDataClass.isAuth = true;
                     //navController.navigate(NavRoutes.Home.route)
                     Toast.makeText(curContext, userNameTextFieldState.text, Toast.LENGTH_LONG).show()
+
+                    composableScope.launch(Dispatchers.IO) {
+                        testExecuteWebmethod()
+                    }
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,6 +159,45 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
     // Suppress Back Button.
     BackHandler {  }
 
+}
+
+val SOAP_ADDRESS: String = "http://192.168.1.120:81/communication.asmx"
+val GET_USERS_ACTION: String = "/GetMhhtUsers"
+val OPERATION_NAME: String = "GetMhhtUsers"
+val WSDL_TARGET_NAMESPACE: String = ""
+val XML_MhhtApplicationIdentifier : String = "IkqhgbC+NyZHpu3ardXVQOPsg6Ge0zxKHcs5wYCUwM8Sv7HjXg/9KD3pHyI4q4ltRhI9LVafBK8JwXGNX5KkfoYcDKSuyxbqxt41s1eAOVVMUTfTgBdsBpfDhZ/hmY+RZS3B6yqT9tMIdiJdUeHhr7FARC56hwr1iq4iMyJJSVXWG07YaZ1zKvW/w3vHGYkj8pS38HuIzC9zDv7GL9v95SIdBm8jqVTrHZUazoo3z33ZRyRpfsMiNtwWj2Q0QbxvLL98wRkmT40dYlBsUR/LTA=="
+
+
+private fun testExecuteWebmethod(){
+
+    //val soapH = SoapHelper()
+    //soapH.Test()
+
+    var result = ""
+    //val SOAP_ACTION = Utils.SOAP_NAMESPACE + methodName
+    val soapObject = SoapObject(WSDL_TARGET_NAMESPACE, OPERATION_NAME)
+
+
+    soapObject.addProperty("xml", XML_MhhtApplicationIdentifier)
+    soapObject.addProperty("login", "samarin")
+    soapObject.addProperty("password", "samarin")
+
+    val envelope = SoapSerializationEnvelope(SoapEnvelope.VER11)
+    envelope.setOutputSoapObject(soapObject)
+    envelope.dotNet = true
+
+    val httpTransportSE = HttpTransportSE(SOAP_ADDRESS)
+
+    try {
+        //httpTransportSE.call(SOAP_ACTION, envelope)
+        httpTransportSE.call(GET_USERS_ACTION, envelope)
+        val soapPrimitive = envelope.response
+        result = soapPrimitive.toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+
+    //return result
 }
 
 

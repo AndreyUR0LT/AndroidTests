@@ -1,5 +1,6 @@
 package com.higtek.testBle
 
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
@@ -33,10 +35,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -45,34 +49,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.fasterxml.jackson.annotation.JsonSetter
-import com.fasterxml.jackson.annotation.Nulls
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.MapperFeature
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.ksoap2.SoapEnvelope
 import org.ksoap2.serialization.SoapObject
 import org.ksoap2.serialization.SoapSerializationEnvelope
 import org.ksoap2.transport.HttpTransportSE
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.util.Base64
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import java.security.MessageDigest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
+
 
     // State variables to store user input
     val userName = rememberSaveable {
@@ -86,9 +77,20 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
 
     val userNameTextFieldState = rememberTextFieldState()
 
+    val passwordTextFieldState = rememberTextFieldState()
+
     val curContext = LocalContext.current
 
     val composableScope = rememberCoroutineScope()
+
+    val uriFromPref = runBlocking { getServerUrl(curContext).first() }
+
+    LaunchedEffect(true) {
+        composableScope.launch(Dispatchers.IO) {
+            updateUsers(uriFromPref, curContext, composableScope)
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -105,6 +107,12 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
                     )
                 },
                 actions = {
+                    IconButton(onClick = { composableScope.launch(Dispatchers.IO) {updateUsers(uriFromPref, curContext, composableScope)} }) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "Refresh"
+                        )
+                    }
                     IconButton(onClick = { navController.navigate(NavRoutes.Settings.route) }) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
@@ -147,14 +155,20 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
             // Login button
             OutlinedButton(
                 onClick = {
-                    mainDataClass.listOfUserNames.add("Hren")
+                    //mainDataClass.listOfUserNames.add("Hren")
                     //mainDataClass.isAuth = true;
                     //navController.navigate(NavRoutes.Home.route)
-                    Toast.makeText(curContext, userNameTextFieldState.text, Toast.LENGTH_LONG).show()
+                    //Toast.makeText(curContext, userNameTextFieldState.text, Toast.LENGTH_LONG).show()
 
-                    composableScope.launch(Dispatchers.IO) {
-                        //testExecuteWebmethod()
-                        testEspExecuteWebmethod()
+                    for (item in com.higtek.testBle.mainDataClass.listOfMhhtUsers){
+                        if(item.Login == userNameTextFieldState.text){
+                            var pwdHash = calculateMd5Hash(userPassword.value)
+                            if (item.PasswordHash == pwdHash)
+                                composableScope.launch(Dispatchers.Main) {Toast.makeText(curContext, "Password OK", Toast.LENGTH_LONG).show()}
+                            else
+                                composableScope.launch(Dispatchers.Main) {Toast.makeText(curContext, "Password is incorrect", Toast.LENGTH_LONG).show()}
+                            break
+                        }
                     }
 
                 },
@@ -163,7 +177,27 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
                     .padding(0.dp, 25.dp, 0.dp, 0.dp)
             ) {
                 Text(
-                    text = "Login",
+                    text = "Check Login",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(5.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 20.sp
+                )
+            }
+
+            // Go to Scanner screen button
+            OutlinedButton(
+                onClick = {
+                    mainDataClass.isAuth = true;
+                    navController.navigate(NavRoutes.Home.route)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp, 25.dp, 0.dp, 0.dp)
+            ) {
+                Text(
+                    text = "Go to Scanner",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(5.dp),
@@ -178,6 +212,31 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
     // Suppress Back Button.
     BackHandler {  }
 
+}
+
+fun updateUsers(url: String, curContext: Context, composableScope: CoroutineScope){
+
+    var users = getMHHTUsersForWorkStation(url)
+
+    if(users == null){
+        composableScope.launch(Dispatchers.Main) {Toast.makeText(curContext, "Updating failed", Toast.LENGTH_LONG).show()}
+        return
+    }
+
+    if(users.count() <= 0){
+        composableScope.launch(Dispatchers.Main) {Toast.makeText(curContext, "List of users from ESP is empty", Toast.LENGTH_LONG).show()}
+        return
+    }
+
+    mainDataClass.listOfUserNames.clear()
+    mainDataClass.listOfMhhtUsers.clear()
+
+    for ( item in users){
+        mainDataClass.listOfUserNames.add(item.Login)
+        mainDataClass.listOfMhhtUsers.add(item)
+    }
+
+    composableScope.launch(Dispatchers.Main) {Toast.makeText(curContext, "List of users was updated", Toast.LENGTH_LONG).show()}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -253,7 +312,7 @@ val SOAP_ADDRESS: String = "http://192.168.1.120:81/communication.asmx"
 //val SOAP_ADDRESS: String = "https://gprs.higtek.com:99/communication.asmx"
 val GET_USERS_ACTION: String = "/GetMhhtUsers"
 val OPERATION_NAME: String = "GetMhhtUsers"
-val WSDL_TARGET_NAMESPACE: String = ""
+
 val XML_MhhtApplicationIdentifier : String = "IkqhgbC+NyZHpu3ardXVQOPsg6Ge0zxKHcs5wYCUwM8Sv7HjXg/9KD3pHyI4q4ltRhI9LVafBK8JwXGNX5KkfoYcDKSuyxbqxt41s1eAOVVMUTfTgBdsBpfDhZ/hmY+RZS3B6yqT9tMIdiJdUeHhr7FARC56hwr1iq4iMyJJSVXWG07YaZ1zKvW/w3vHGYkj8pS38HuIzC9zDv7GL9v95SIdBm8jqVTrHZUazoo3z33ZRyRpfsMiNtwWj2Q0QbxvLL98wRkmT40dYlBsUR/LTA=="
 
 val TST_STR : String = "<MhhtApplicationIdentifier HardwareId=\"1\" SoftwareId=\"1\" />"
@@ -292,107 +351,14 @@ private fun testExecuteWebmethod(){
     //return result
 }
 
-fun compressBuffer(data:ByteArray)
-{
-    var str0 = data.toString(Charsets.UTF_8)
-    //var outputArray : ByteArray
-    var byteArrayOutputStream = ByteArrayOutputStream()
 
-    ZipOutputStream(BufferedOutputStream(byteArrayOutputStream)).use { output ->
-        ByteArrayInputStream(data).use { input ->
-            BufferedInputStream(input).use { origin ->
-                val entry = ZipEntry("HIG")
-                output.putNextEntry(entry)
-                origin.copyTo(output, 1024 * 10)
-            }
-        }
-    }
-
-    var arr = byteArrayOutputStream.toByteArray()
-    var arrS = byteArrayOutputStream.toString()
-    var str = arr.toString(Charsets.UTF_8)
-
-    var str2 = decompressBuffer(arr)
-}
-
-fun decompressBuffer(data: ByteArray) : String
-{
-    var zipInputStream = ZipInputStream(ByteArrayInputStream(data))
-    var zipEntry = zipInputStream.nextEntry
-
-    val buffer = ByteArray(8192)
-    var len = zipInputStream.read(buffer)
-
-    if(len <= 0)
-        return ""
-
-    val bufferToOut = buffer.copyOfRange(0, len)
-
-    var str = buffer.toString(Charsets.UTF_8).substring(0, len)
-
-    return str
-}
-
-fun compressBuffer2(data:ByteArray)
-{
-    //var outputArray : ByteArray
-    var byteArrayOutputStream = ByteArrayOutputStream()
-
-    ZipOutputStream(BufferedOutputStream(byteArrayOutputStream)).use { output ->
-        ByteArrayInputStream(data).use { input ->
-            BufferedInputStream(input).use { origin ->
-                val entry = ZipEntry("HIG")
-                output.putNextEntry(entry)
-                origin.copyTo(output, 1024 * 10)
-            }
-        }
-    }
-
-    var arr = byteArrayOutputStream.toByteArray()
-    var str = arr.toString(Charsets.UTF_8)
-}
-
-
+/*
 //val ESP_SOAP_ADDRESS: String = "https://esp.higtek.com/TransportWebService.asmx"
 val ESP_SOAP_ADDRESS: String = "http://192.168.1.120:83/TransportWebService.asmx"
 val ESP_OPERATION_NAME: String = "GetMHHTUsersForWorkStation"
 val ESP_GET_USERS_ACTION: String = "/GetMHHTUsersForWorkStation"
 
 
-data class MHHTUser(
-    @JsonSetter(nulls = Nulls.SKIP)
-    val Login: String = "",
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val FirstName: String = "",
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val LastName: String  = "",
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val PasswordHash: String = "",
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val IDTemplate: Int = 0,
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val PowerUser: Boolean = false,
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val IDLocation: Long = 0,
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val LocName: String = "",
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val ID: Long = 0,
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val IDCompany: Long = 0,
-
-    @JsonSetter(nulls = Nulls.SKIP)
-    val CompanyName: String = "",
-)
 
 private fun testEspExecuteWebmethod(){
 
@@ -456,11 +422,4 @@ private fun testEspExecuteWebmethod(){
 
     //return result
 }
-
-@OptIn(ExperimentalStdlibApi::class)
-fun calculateMd5Hash(input:String) : String {
-
-    val md = MessageDigest.getInstance("MD5")
-    val digest = md.digest(input.toByteArray())
-    return digest.toHexString().uppercase()
-}
+*/

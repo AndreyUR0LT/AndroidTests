@@ -83,4 +83,9 @@ dependencies {
     // KSOAP2
     implementation("com.google.code.ksoap2-android:ksoap2-android:3.6.4")
 
+    implementation ("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.18.1")
+    implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1")
+    implementation ("com.fasterxml.woodstox:woodstox-core:6.5.0")
+    implementation ("javax.xml.stream:stax-api:1.0-2")
+
 }

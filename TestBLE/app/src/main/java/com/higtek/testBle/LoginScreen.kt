@@ -45,12 +45,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.fasterxml.jackson.annotation.JsonSetter
+import com.fasterxml.jackson.annotation.Nulls
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.ksoap2.SoapEnvelope
 import org.ksoap2.serialization.SoapObject
 import org.ksoap2.serialization.SoapSerializationEnvelope
 import org.ksoap2.transport.HttpTransportSE
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.Base64
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import java.security.MessageDigest
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,7 +153,8 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
                     Toast.makeText(curContext, userNameTextFieldState.text, Toast.LENGTH_LONG).show()
 
                     composableScope.launch(Dispatchers.IO) {
-                        testExecuteWebmethod()
+                        //testExecuteWebmethod()
+                        testEspExecuteWebmethod()
                     }
 
                 },
@@ -160,46 +179,6 @@ fun LoginScreen(navController: NavController, mainDataClass: MainDataClass) {
     BackHandler {  }
 
 }
-
-val SOAP_ADDRESS: String = "http://192.168.1.120:81/communication.asmx"
-val GET_USERS_ACTION: String = "/GetMhhtUsers"
-val OPERATION_NAME: String = "GetMhhtUsers"
-val WSDL_TARGET_NAMESPACE: String = ""
-val XML_MhhtApplicationIdentifier : String = "IkqhgbC+NyZHpu3ardXVQOPsg6Ge0zxKHcs5wYCUwM8Sv7HjXg/9KD3pHyI4q4ltRhI9LVafBK8JwXGNX5KkfoYcDKSuyxbqxt41s1eAOVVMUTfTgBdsBpfDhZ/hmY+RZS3B6yqT9tMIdiJdUeHhr7FARC56hwr1iq4iMyJJSVXWG07YaZ1zKvW/w3vHGYkj8pS38HuIzC9zDv7GL9v95SIdBm8jqVTrHZUazoo3z33ZRyRpfsMiNtwWj2Q0QbxvLL98wRkmT40dYlBsUR/LTA=="
-
-
-private fun testExecuteWebmethod(){
-
-    //val soapH = SoapHelper()
-    //soapH.Test()
-
-    var result = ""
-    //val SOAP_ACTION = Utils.SOAP_NAMESPACE + methodName
-    val soapObject = SoapObject(WSDL_TARGET_NAMESPACE, OPERATION_NAME)
-
-
-    soapObject.addProperty("xml", XML_MhhtApplicationIdentifier)
-    soapObject.addProperty("login", "samarin")
-    soapObject.addProperty("password", "samarin")
-
-    val envelope = SoapSerializationEnvelope(SoapEnvelope.VER11)
-    envelope.setOutputSoapObject(soapObject)
-    envelope.dotNet = true
-
-    val httpTransportSE = HttpTransportSE(SOAP_ADDRESS)
-
-    try {
-        //httpTransportSE.call(SOAP_ACTION, envelope)
-        httpTransportSE.call(GET_USERS_ACTION, envelope)
-        val soapPrimitive = envelope.response
-        result = soapPrimitive.toString()
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-
-    //return result
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -246,7 +225,7 @@ fun LoginField(listOfUserNames: List<String>, userNameTextFieldState: TextFieldS
             },
             colors = ExposedDropdownMenuDefaults.textFieldColors(),
 
-        )
+            )
         ExposedDropdownMenu(
             modifier = Modifier.heightIn(max = 280.dp),
             expanded = expanded,
@@ -264,4 +243,224 @@ fun LoginField(listOfUserNames: List<String>, userNameTextFieldState: TextFieldS
             }
         }
     }
+}
+
+//********************************************************************************************************
+// Utils
+//********************************************************************************************************
+
+val SOAP_ADDRESS: String = "http://192.168.1.120:81/communication.asmx"
+//val SOAP_ADDRESS: String = "https://gprs.higtek.com:99/communication.asmx"
+val GET_USERS_ACTION: String = "/GetMhhtUsers"
+val OPERATION_NAME: String = "GetMhhtUsers"
+val WSDL_TARGET_NAMESPACE: String = ""
+val XML_MhhtApplicationIdentifier : String = "IkqhgbC+NyZHpu3ardXVQOPsg6Ge0zxKHcs5wYCUwM8Sv7HjXg/9KD3pHyI4q4ltRhI9LVafBK8JwXGNX5KkfoYcDKSuyxbqxt41s1eAOVVMUTfTgBdsBpfDhZ/hmY+RZS3B6yqT9tMIdiJdUeHhr7FARC56hwr1iq4iMyJJSVXWG07YaZ1zKvW/w3vHGYkj8pS38HuIzC9zDv7GL9v95SIdBm8jqVTrHZUazoo3z33ZRyRpfsMiNtwWj2Q0QbxvLL98wRkmT40dYlBsUR/LTA=="
+
+val TST_STR : String = "<MhhtApplicationIdentifier HardwareId=\"1\" SoftwareId=\"1\" />"
+
+private fun testExecuteWebmethod(){
+
+    //val soapH = SoapHelper()
+    //soapH.Test()
+
+    compressBuffer(TST_STR.toByteArray(Charsets.UTF_8))
+
+    var result = ""
+    //val SOAP_ACTION = Utils.SOAP_NAMESPACE + methodName
+    val soapObject = SoapObject(WSDL_TARGET_NAMESPACE, OPERATION_NAME)
+
+
+    soapObject.addProperty("xml", XML_MhhtApplicationIdentifier)
+    soapObject.addProperty("login", "samarin")
+    soapObject.addProperty("password", "samarin")
+
+    val envelope = SoapSerializationEnvelope(SoapEnvelope.VER11)
+    envelope.setOutputSoapObject(soapObject)
+    envelope.dotNet = true
+
+    val httpTransportSE = HttpTransportSE(SOAP_ADDRESS)
+
+    try {
+        //httpTransportSE.call(SOAP_ACTION, envelope)
+        httpTransportSE.call(GET_USERS_ACTION, envelope)
+        val soapPrimitive = envelope.response
+        result = soapPrimitive.toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+
+    //return result
+}
+
+fun compressBuffer(data:ByteArray)
+{
+    var str0 = data.toString(Charsets.UTF_8)
+    //var outputArray : ByteArray
+    var byteArrayOutputStream = ByteArrayOutputStream()
+
+    ZipOutputStream(BufferedOutputStream(byteArrayOutputStream)).use { output ->
+        ByteArrayInputStream(data).use { input ->
+            BufferedInputStream(input).use { origin ->
+                val entry = ZipEntry("HIG")
+                output.putNextEntry(entry)
+                origin.copyTo(output, 1024 * 10)
+            }
+        }
+    }
+
+    var arr = byteArrayOutputStream.toByteArray()
+    var arrS = byteArrayOutputStream.toString()
+    var str = arr.toString(Charsets.UTF_8)
+
+    var str2 = decompressBuffer(arr)
+}
+
+fun decompressBuffer(data: ByteArray) : String
+{
+    var zipInputStream = ZipInputStream(ByteArrayInputStream(data))
+    var zipEntry = zipInputStream.nextEntry
+
+    val buffer = ByteArray(8192)
+    var len = zipInputStream.read(buffer)
+
+    if(len <= 0)
+        return ""
+
+    val bufferToOut = buffer.copyOfRange(0, len)
+
+    var str = buffer.toString(Charsets.UTF_8).substring(0, len)
+
+    return str
+}
+
+fun compressBuffer2(data:ByteArray)
+{
+    //var outputArray : ByteArray
+    var byteArrayOutputStream = ByteArrayOutputStream()
+
+    ZipOutputStream(BufferedOutputStream(byteArrayOutputStream)).use { output ->
+        ByteArrayInputStream(data).use { input ->
+            BufferedInputStream(input).use { origin ->
+                val entry = ZipEntry("HIG")
+                output.putNextEntry(entry)
+                origin.copyTo(output, 1024 * 10)
+            }
+        }
+    }
+
+    var arr = byteArrayOutputStream.toByteArray()
+    var str = arr.toString(Charsets.UTF_8)
+}
+
+
+//val ESP_SOAP_ADDRESS: String = "https://esp.higtek.com/TransportWebService.asmx"
+val ESP_SOAP_ADDRESS: String = "http://192.168.1.120:83/TransportWebService.asmx"
+val ESP_OPERATION_NAME: String = "GetMHHTUsersForWorkStation"
+val ESP_GET_USERS_ACTION: String = "/GetMHHTUsersForWorkStation"
+
+
+data class MHHTUser(
+    @JsonSetter(nulls = Nulls.SKIP)
+    val Login: String = "",
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val FirstName: String = "",
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val LastName: String  = "",
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val PasswordHash: String = "",
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val IDTemplate: Int = 0,
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val PowerUser: Boolean = false,
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val IDLocation: Long = 0,
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val LocName: String = "",
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val ID: Long = 0,
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val IDCompany: Long = 0,
+
+    @JsonSetter(nulls = Nulls.SKIP)
+    val CompanyName: String = "",
+)
+
+private fun testEspExecuteWebmethod(){
+
+    //val soapH = SoapHelper()
+    //soapH.Test()
+
+    //compressBuffer(TST_STR.toByteArray(Charsets.UTF_8))
+
+    var result = ""
+    //val SOAP_ACTION = Utils.SOAP_NAMESPACE + methodName
+    val soapObject = SoapObject(WSDL_TARGET_NAMESPACE, ESP_OPERATION_NAME)
+
+
+    //soapObject.addProperty("xml", XML_MhhtApplicationIdentifier)
+    //soapObject.addProperty("login", "samarin")
+    //soapObject.addProperty("password", "samarin")
+    soapObject.addProperty("erpCode", "")
+
+    val envelope = SoapSerializationEnvelope(SoapEnvelope.VER11)
+    envelope.setOutputSoapObject(soapObject)
+    envelope.dotNet = true
+
+    val httpTransportSE = HttpTransportSE(ESP_SOAP_ADDRESS)
+
+    try {
+        //httpTransportSE.call(SOAP_ACTION, envelope)
+        httpTransportSE.call(ESP_GET_USERS_ACTION, envelope)
+        val soapPrimitive = envelope.response
+        result = soapPrimitive.toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+
+    var res = result;
+
+
+    //val encodedString: String = Base64.getEncoder().encodeToString(originalString.toByteArray())
+    //val decodedString: String = String(Base64.getDecoder().decode(result))
+    val decoded: ByteArray = Base64.getDecoder().decode(result)
+
+    res = decompressBuffer(decoded)
+
+
+    val xmlDeserializer = XmlMapper(JacksonXmlModule().apply {
+        setDefaultUseWrapper(false)
+    }).registerKotlinModule()
+        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+    //var desObj = xmlDeserializer.readValue(res, MHHTUser[]::class.java)
+
+    val genres = xmlDeserializer.readValue<List<MHHTUser>>(res)
+
+    var hash0 = genres[0].PasswordHash
+
+    var hash1 = calculateMd5Hash("123")
+
+    if(hash0 == hash1){
+        var i = 0
+    }
+
+    //return result
+}
+
+@OptIn(ExperimentalStdlibApi::class)
+fun calculateMd5Hash(input:String) : String {
+
+    val md = MessageDigest.getInstance("MD5")
+    val digest = md.digest(input.toByteArray())
+    return digest.toHexString().uppercase()
 }

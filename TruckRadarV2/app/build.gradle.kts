@@ -75,4 +75,17 @@ dependencies {
 
     // Android Maps Compose composables for the Maps SDK for Android
     implementation ("com.google.maps.android:maps-compose:4.4.1")
+
+    // KSOAP2
+    //implementation("com.google.code.ksoap2-android:ksoap2-android:3.6.4")
+
+    implementation ("com.squareup.retrofit2:retrofit:2.6.1")
+    implementation ("com.squareup.retrofit2:converter-scalars:2.6.1")
+
+    implementation("com.squareup.okhttp3:okhttp:4.2.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.2.0")
+
+    implementation ("com.squareup.retrofit2:converter-simplexml:2.6.1")
+
+
 }

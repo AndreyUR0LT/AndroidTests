@@ -1,17 +1,23 @@
 package com.higtek.truckradarv2
 
 import android.content.Context
+import android.graphics.Typeface
 import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -33,7 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,18 +54,25 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerInfoWindow
+import com.google.maps.android.compose.MarkerInfoWindowContent
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.higtek.truckradarv2.ui.theme.TruckRadarV2Theme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 
 var mainDataClass = MainDataClass()
@@ -64,6 +81,40 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 
 
 class MainActivity : ComponentActivity() {
+
+/*
+    internal inner class CustomInfoWindowAdapter : GoogleMap.InfoWindowAdapter {
+        override fun getInfoContents(marker: Marker): View {
+
+            var mContext = getApplicationContext();
+
+            val info = LinearLayout(mContext)
+            info.orientation = LinearLayout.VERTICAL
+
+            val title = TextView(mContext)
+            title.setTextColor(Color.BLACK)
+            title.gravity = Gravity.CENTER
+            title.setTypeface(null, Typeface.BOLD)
+            title.setText(marker.getTitle())
+
+            val snippet = TextView(mContext)
+            snippet.setTextColor(Color.BLACK)
+            snippet.gravity = Gravity.LEFT
+            snippet.setText(marker.getSnippet())
+
+            info.addView(title)
+            info.addView(snippet)
+
+            return info
+        }
+
+        override fun getInfoWindow(p0: Marker): View? {
+            return null
+        }
+
+    }
+*/
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -83,7 +134,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+    }
+
 }
 
 @Composable
@@ -126,6 +184,7 @@ fun MainScreen(mainDataClass: MainDataClass, modifier: Modifier) {
 }
 
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: MainDataClass) {
@@ -143,6 +202,26 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
 
     val curContext = LocalContext.current
 
+    val truckPos  = remember { mutableStateOf(mainDataClass.truckPositions) }
+
+    val uriFromPref = runBlocking { getServerUrl(curContext).first() }
+    val userNameFromPref = runBlocking { getServerUsername(curContext).first() }
+    val passwordFromPref = runBlocking { getServerPassword(curContext).first() }
+
+    HgcApi.updateUrl(uriFromPref)
+
+    composableScope.launch(Dispatchers.IO) {
+        while(true){
+
+            var result = getEvents(userNameFromPref, passwordFromPref, mainDataClass)
+            if (result){
+                truckPos.value = mainDataClass.truckPositions
+                delay(SERVER_DELAY)
+            }
+            else
+                delay(SERVER_DELAY_LONG)
+        }
+    }
 
 
     Scaffold(
@@ -180,13 +259,54 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
 
         GoogleMap(
             modifier = modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
+            cameraPositionState = cameraPositionState,
         ) {
+            truckPos.value.forEach{ pos ->
+
+                MarkerInfoWindow(
+                    state = MarkerState(
+                        position = LatLng(
+                            pos.event.LatitudeFloat,
+                            pos.event.LongitudeFloat
+                        )
+                    ),
+                    title = "Truck " + pos.uid.toString(),
+                    snippet = pos.getSnippet()
+                    ) { marker ->
+                    // Implement the custom info window here
+                    Column(modifier = Modifier.background(color = Color.White).padding(5.dp)) {
+                        Text(marker.title ?: "Default Marker Title", fontWeight = FontWeight.Bold)
+                        Text(marker.snippet ?: "Default Marker Snippet")
+                    }
+                }
+/*
+                MarkerInfoWindowContent() {
+                    marker ->
+                    Text(marker.title ?: "Unknown Truck")
+                    Text("HUY " + marker.snippet ?: "-")
+                }
+                Marker(
+                    state = MarkerState(
+                        position = LatLng(
+                            pos.event.LatitudeFloat,
+                            pos.event.LongitudeFloat
+                        )
+                    ),
+                    title = "Truck " + pos.uid.toString(),
+                    snippet = pos.getSnippet(),
+
+                )
+
+ */
+            }
+/*
             Marker(
                 state = MarkerState(position = jerusalim),
                 title = "Singapore",
                 snippet = "Marker in Singapore"
             )
+
+ */
         }
 
     }

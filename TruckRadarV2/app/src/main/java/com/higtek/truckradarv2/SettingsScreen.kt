@@ -2,6 +2,7 @@ package com.higtek.truckradarv2
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +27,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -45,12 +48,17 @@ fun SettingsScreen(navController: NavController, mainDataClass: MainDataClass) {
     }
 
     val userName = rememberSaveable {
-        mutableStateOf("samarin")
+        mutableStateOf("truckRadar")
     }
 
     val password = rememberSaveable {
-        mutableStateOf("samarin")
+        mutableStateOf("truckRadar")
     }
+
+    val isMarkerTruckPhotoEnable = rememberSaveable {
+        mutableStateOf(true)
+    }
+
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
@@ -61,6 +69,7 @@ fun SettingsScreen(navController: NavController, mainDataClass: MainDataClass) {
 
     userName.value = runBlocking { getServerUsername(curContext).first() }
     password.value = runBlocking { getServerPassword(curContext).first() }
+    isMarkerTruckPhotoEnable.value = runBlocking { getIsMarkerTruckPhotoEnabled(curContext).first() }
 
     Scaffold(
         topBar = {
@@ -142,6 +151,18 @@ fun SettingsScreen(navController: NavController, mainDataClass: MainDataClass) {
                     .padding(0.dp, 20.dp, 0.dp, 0.dp)
             )
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Turn on photos of trucks "
+                )
+                Checkbox(
+                    checked = isMarkerTruckPhotoEnable.value,
+                    onCheckedChange = { isMarkerTruckPhotoEnable.value = it }
+                )
+            }
+
             // Save button
             OutlinedButton(
                 onClick = {
@@ -149,6 +170,7 @@ fun SettingsScreen(navController: NavController, mainDataClass: MainDataClass) {
                         setServerUrl(curContext, serverUri.value)
                         setServerUsername(curContext, userName.value)
                         setServerPassword(curContext, password.value)
+                        setIsMarkerTruckPhotoEnabled(curContext, isMarkerTruckPhotoEnable.value)
                     }
                     //navController.navigateUp()
                     Toast.makeText(curContext, "Settings saved", Toast.LENGTH_LONG).show()

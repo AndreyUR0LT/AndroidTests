@@ -11,7 +11,7 @@ public val SERVER_DELAY_LONG = 5000L
 public suspend fun getEvents(hgcUser: String, hgcPassword: String, mainDataClass: MainDataClass) : Boolean{
 
     try{
-        //Log.v("getEvents", "Start")
+        Log.v("getEvents", "Start")
 
         var eventsString = HgcApi.getRetrofitService().GetEventParsedData(hgcUser, hgcPassword, 100)
         if (eventsString.isNullOrEmpty()){
@@ -41,6 +41,7 @@ public suspend fun getEvents(hgcUser: String, hgcPassword: String, mainDataClass
                 val truckPos = TruckPosition()
                 truckPos.uid = ev.Uid
                 truckPos.event = ev
+                truckPos.truckPhotoResourceId = getPhotoResId()
                 truckPosCopy.add(truckPos)
             }
             else{
@@ -60,76 +61,37 @@ public suspend fun getEvents(hgcUser: String, hgcPassword: String, mainDataClass
     return true
 }
 
-/*
-private fun getEvents(hgcUser: String, hgcPassword: String){
-    label@coroutineScope.launch {
+fun getPhotoResId(): Int {
 
-        try{
-            //Log.v("getEvents", "Start")
+    val rnds = (1..11).random()
 
-            var eventsString = HgcApi.getRetrofitService().GetEventParsedData(hgcUser, hgcPassword, 100)
-            if (eventsString.isNullOrEmpty()){
-                Handler().postDelayed(worker, DELAY_LONG)
-                return@label
-            }
-            Log.v("getEvents", "Start processing")
-            eventsString = eventsString.replace("&lt;", "<").replace("&gt;", ">").
-            replace("<string>", "").replace("</string>", "")
-
-            lateinit var events:Events
-            events = SerializationHelper.getInstance().DeserializeEvents(eventsString)
-            if (events == null){
-                Handler().postDelayed(worker, DELAY_LONG)
-                return@label
-            }
-
-            if (events.Events == null){
-                Handler().postDelayed(worker, DELAY_LONG)
-                return@label
-            }
-
-            for (ev: AVLEvent in events.Events){
-                if ((ev.LatitudeFloat.isNaN()) || (ev.LongitudeFloat.isNaN()))
-                    continue
-
-                if (mMarkers.size <= 0){
-                    addMarkerToList(ev)
-                    var location = LatLng(ev.LatitudeFloat, ev.LongitudeFloat)
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(location))
-                    continue
-                }
-
-                if (!mMarkers.any { m -> m.uid == ev.Uid }){
-                    addMarkerToList(ev)
-                }
-                else{
-                    val oldMarker = mMarkers.first { m -> m.uid == ev.Uid }
-                    oldMarker.marker.position = LatLng(ev.LatitudeFloat, ev.LongitudeFloat)
-                    oldMarker.marker.snippet = generateSnippet(ev)
-                }
-            }
-
-            Log.v("getEvents", "Stop")
-        }catch(t: Throwable){
-            t.printStackTrace()
-        }
-        Handler().postDelayed(worker, DELAY)
+    when(rnds){
+        1 -> return R.drawable.truck1
+        2 -> return R.drawable.truck2
+        3 -> return R.drawable.truck3
+        4 -> return R.drawable.truck4
+        5 -> return R.drawable.truck5
+        6 -> return R.drawable.truck6
+        7 -> return R.drawable.truck7
+        8 -> return R.drawable.truck8
+        9 -> return R.drawable.truck9
+        10 -> return R.drawable.truck10
+        11 -> return R.drawable.truck11
+        else -> return R.drawable.truck1
     }
 }
-*/
 
-/*
-private fun clearEvents(){
-    coroutineScope.launch {
-        try{
-            Log.v("clearEvents", "Clear events")
 
-            //var result = HgcApi.getRetrofitService().EraseUnsentEventsForUser(mHgcUser, mHgcPassword)
+public suspend fun clearEvents(hgcUser: String, hgcPassword: String){
+    try{
+        Log.v("clearEvents", "Clear events")
 
-        }catch(t: Throwable){
-            t.printStackTrace()
-        }
+        var result = HgcApi.getRetrofitService().EraseUnsentEventsForUser(hgcUser, hgcPassword)
 
+        Log.v("clearEvents", "Clear events result: " + result)
+
+    }catch(t: Throwable){
+        t.printStackTrace()
     }
 }
-*/
+

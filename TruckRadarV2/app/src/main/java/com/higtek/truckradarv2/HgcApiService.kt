@@ -39,6 +39,13 @@ interface HgcApiService{
     suspend fun EraseUnsentEventsForUser(@Query("login") login : String,
                                          @Query("password") password : String): String
 
+    @GET("/communication.asmx/ExecuteCommand")
+    suspend fun ExecuteCommand(@Query("login") login : String,
+                               @Query("password") password : String,
+                               @Query("modemSN") modemSN : String,
+                               @Query("protocol") protocol : String,
+                               @Query("commandCode") commandCode : Int,
+                               @Query("parameters") parameters : String): String
 }
 
 object HgcApi{

@@ -8,6 +8,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -165,19 +167,24 @@ fun MainScreen(mainDataClass: MainDataClass, modifier: Modifier) {
 fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: MainDataClass) {
 
     val openClearEventsDialog = remember { mutableStateOf(false) }
+    val openSendSetCommandDialog = remember { mutableStateOf(false) }
+    //val selectedTruckUid = remember { mutableStateOf("") }
 
     val composableScope = rememberCoroutineScope()
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
-    val jerusalim = LatLng(31.8, 35.1)
+    val jerusalem = LatLng(31.8, 35.1)
+    val kharkiv = LatLng(50.0033, 36.2711)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(jerusalim, 8f)
+        position = CameraPosition.fromLatLngZoom(kharkiv, 8f)
     }
 
     val curContext = LocalContext.current
 
     val truckPos  = remember { mutableStateOf(mainDataClass.truckPositions) }
+
+    val currentTruckPos = remember { mutableStateOf(TruckPosition()) }
 
     val uriFromPref = runBlocking { getServerUrl(curContext).first() }
     val userNameFromPref = runBlocking { getServerUsername(curContext).first() }
@@ -248,7 +255,12 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
                     ),
                     title = "Truck " + pos.uid.toString(),
                     snippet = pos.getSnippet(),
-                    icon = BitmapDescriptorFactory.fromResource(R.drawable.truckmarker24)
+                    icon = BitmapDescriptorFactory.fromResource(R.drawable.truckmarker24),
+                    onInfoWindowLongClick = { marker ->
+                        currentTruckPos.value = pos
+//                        selectedTruckUid.value = pos.uid
+                        openSendSetCommandDialog.value = !openSendSetCommandDialog.value
+                    }
                     ) { marker ->
                     // Custom info window
                     Column(modifier = Modifier.background(color = Color.White).padding(5.dp),
@@ -265,6 +277,11 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
                                 )
                             }
                             Text(marker.snippet ?: "Default Marker Snippet")
+                        }
+                        pos.sealStatuses?.forEach{seal -> Text(seal.sealId + " - " + seal.statusDescription)}
+
+                        Button(onClick = {}) {
+                            Text("Long tap to SET")
                         }
                     }
                 }
@@ -294,6 +311,27 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
                     }
 
                 }
+            )
+        }
+
+
+    }
+
+    when {
+        openSendSetCommandDialog.value -> {
+            SendSetCommandDialog(
+                onDismissRequest = { openSendSetCommandDialog.value = false },
+                onConfirmation = {
+                    openSendSetCommandDialog.value = false
+                    composableScope.launch(Dispatchers.IO) {
+                        sendSetCommand(userNameFromPref, passwordFromPref, currentTruckPos.value)
+                        composableScope.launch(Dispatchers.Main) {
+                            Toast.makeText(curContext, "SET Command was send", Toast.LENGTH_LONG).show()
+                        }
+                    }
+
+                },
+                currentTruckPos.value.uid
             )
         }
     }
@@ -340,3 +378,42 @@ fun ClearEventsDialog(
     )
 }
 
+@Composable
+fun SendSetCommandDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    truckUid : String
+) {
+    AlertDialog(
+        icon = {
+            Icons.Filled.Warning
+        },
+        title = {
+            Text(text = "SET Operation")
+        },
+        text = {
+            Text(text = "Do you want send SET command to truck $truckUid?")
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }
+            ) {
+                Text("Ok")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}

@@ -11,6 +11,9 @@ public class AVLEvent {
     @Attribute(name = "Uid")
     public String Uid;
 
+    @Attribute(name = "Code")
+    public int Code;
+
     @Attribute(name = "DateTime")
     public String DateTime;
 
@@ -25,6 +28,18 @@ public class AVLEvent {
 
     @Attribute(name = "Course", required = false)
     public int Course;
+
+    @Attribute(name = "Location", required = false)
+    public String Location;
+
+    @Attribute(name = "ShortStatus", required = false)
+    public int ShortStatus;
+
+    @Attribute(name = "RestartReason", required = false)
+    public String RestartReason;
+
+    @Attribute(name = "Protocol")
+    public String Protocol;
 
     public AVLEvent(){
         LatitudeFloat = Double.NaN;

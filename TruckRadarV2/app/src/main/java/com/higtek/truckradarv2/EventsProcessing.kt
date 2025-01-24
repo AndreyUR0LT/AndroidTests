@@ -40,13 +40,13 @@ public suspend fun getEvents(hgcUser: String, hgcPassword: String, mainDataClass
             if (!truckPosCopy.any { m -> m.uid == ev.Uid }){
                 val truckPos = TruckPosition()
                 truckPos.uid = ev.Uid
-                truckPos.event = ev
+                truckPos.setEvent(ev)
                 truckPos.truckPhotoResourceId = getPhotoResId()
                 truckPosCopy.add(truckPos)
             }
             else{
                 val oldMarker = truckPosCopy.first { m -> m.uid == ev.Uid }
-                oldMarker.event = ev
+                oldMarker.setEvent(ev)
             }
         }
 
@@ -95,3 +95,24 @@ public suspend fun clearEvents(hgcUser: String, hgcPassword: String){
     }
 }
 
+public suspend fun sendSetCommand(hgcUser: String, hgcPassword: String, currentTruckPos: TruckPosition) : String{
+
+    var result : String = "Failed"
+
+    try{
+        Log.v("sendSetCommand", "Send Set Command")
+
+        // 0x17 - EXECUTE SET Command
+        // 0x0B 0x5C - SET Stamp
+        // List of Seals empty
+        result = HgcApi.getRetrofitService().ExecuteCommand(hgcUser, hgcPassword,
+            currentTruckPos.uid, currentTruckPos.event.Protocol, 0xFF, "170B5C")
+
+        Log.v("sendSetCommand", "Send Set Command result: " + result)
+
+    }catch(t: Throwable){
+        t.printStackTrace()
+    }
+
+    return result
+}

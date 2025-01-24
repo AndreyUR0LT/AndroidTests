@@ -12,7 +12,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -48,6 +48,21 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    applicationVariants.all {
+        val variant = this
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+//            .filter {
+//                val names = it.name.split("-")
+//                it.name.lowercase().contains(names[0], true) && it.name.lowercase().contains(names[1], true)
+//            }
+            .forEach { output ->
+                val outputFileName = "TruckRadarV2_${variant.flavorName}_${variant.buildType.name}_${variant.versionName}.apk"
+                output.outputFileName = outputFileName
+            }
+    }
+
 }
 
 dependencies {

@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.compose.runtime.toMutableStateList
 
 
-public val SERVER_DELAY = 1000L
-public val SERVER_DELAY_LONG = 5000L
+public val SERVER_DELAY = 5000L
+public val SERVER_DELAY_LONG = 21000L
 
 
 public suspend fun getEvents(hgcUser: String, hgcPassword: String, mainDataClass: MainDataClass) : Boolean{

@@ -20,6 +20,7 @@ fun getServerUrl(context : Context) : Flow<String>{
         .map { preferences ->
             // No type safety.
             preferences[SERVER_URL] ?: "http://gprs.higtek.in:89/"
+            //preferences[SERVER_URL] ?: "http://192.168.1.120:81/"
         }
 
     return serverUrlFlow

@@ -1,33 +1,22 @@
 package com.higtek.truckradarv2
 
 import android.content.Context
-import android.graphics.Typeface
 import android.os.Bundle
-import android.util.Log
-import android.view.Gravity
-import android.view.View
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -38,25 +27,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,19 +53,11 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
 import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapType
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerInfoWindow
-import com.google.maps.android.compose.MarkerInfoWindowContent
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.higtek.truckradarv2.ui.theme.TruckRadarV2Theme
@@ -168,7 +144,8 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
 
     val openClearEventsDialog = remember { mutableStateOf(false) }
     val openSendSetCommandDialog = remember { mutableStateOf(false) }
-    //val selectedTruckUid = remember { mutableStateOf("") }
+    val isShowSearchField = remember { mutableStateOf(false) }
+    val selectedTruckIdTextFieldState = rememberTextFieldState()
 
     val composableScope = rememberCoroutineScope()
 
@@ -177,7 +154,7 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
     val jerusalem = LatLng(31.8, 35.1)
     val kharkiv = LatLng(50.0033, 36.2711)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(kharkiv, 8f)
+        position = CameraPosition.fromLatLngZoom(jerusalem, 8f)
     }
 
     val curContext = LocalContext.current
@@ -222,6 +199,12 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
                     )
                 },
                 actions = {
+                    IconButton(onClick = { isShowSearchField.value = !isShowSearchField.value }) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = "Search"
+                        )
+                    }
                     IconButton(onClick = { openClearEventsDialog.value = !openClearEventsDialog.value }) {
                         Icon(
                             imageVector = Icons.Filled.Clear,
@@ -240,55 +223,82 @@ fun MapScreen(navController: NavController, modifier: Modifier, mainDataClass: M
         },
     ) { innerPadding ->
 
-        GoogleMap(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            cameraPositionState = cameraPositionState,
+        Column(
+            //modifier = modifier
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
-            truckPos.value.forEach{ pos ->
 
-                MarkerInfoWindow(
-                    state = MarkerState(
-                        position = LatLng(
-                            pos.event.LatitudeFloat,
-                            pos.event.LongitudeFloat
-                        )
-                    ),
-                    title = "Truck " + pos.uid.toString(),
-                    snippet = pos.getSnippet(),
-                    icon = BitmapDescriptorFactory.fromResource(R.drawable.truckmarker24),
-                    onInfoWindowLongClick = { marker ->
-                        currentTruckPos.value = pos
+            if(isShowSearchField.value){
+                //Text(text = "Her!!!!!!!!!!!!!!")
+
+                var trucksId : MutableList<String> = mutableListOf()
+                truckPos.value.forEach { pos ->
+                    trucksId.add(pos.uid)
+                }
+
+                FilterTrucksField(trucksId, selectedTruckIdTextFieldState)
+            }
+
+
+
+            GoogleMap(
+                //modifier = Modifier.fillMaxSize().padding(innerPadding),
+                cameraPositionState = cameraPositionState,
+            ) {
+                truckPos.value.forEach{ pos ->
+
+                    if(isShowSearchField.value){
+                        if(!pos.uid.contains(selectedTruckIdTextFieldState.text))
+                            return@forEach
+                    }
+
+                    MarkerInfoWindow(
+                        state = MarkerState(
+                            position = LatLng(
+                                pos.event.LatitudeFloat,
+                                pos.event.LongitudeFloat
+                            )
+                        ),
+                        title = "Truck " + pos.uid.toString(),
+                        snippet = pos.getSnippet(),
+                        icon = BitmapDescriptorFactory.fromResource(R.drawable.truckmarker24),
+                        onInfoWindowLongClick = { marker ->
+                            currentTruckPos.value = pos
 //                        selectedTruckUid.value = pos.uid
-                        openSendSetCommandDialog.value = !openSendSetCommandDialog.value
-                    }
+                            openSendSetCommandDialog.value = !openSendSetCommandDialog.value
+                        }
                     ) { marker ->
-                    // Custom info window
-                    Column(modifier = Modifier.background(color = Color.White).padding(5.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(marker.title ?: "Default Marker Title", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                        Row()
-                        {
-                            if(isMarkerTruckPhotoEnable){
-                                Image(
-                                    painter = painterResource(pos.truckPhotoResourceId),
-                                    contentDescription = "",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier.size(150.dp)
-                                )
+                        // Custom info window
+                        Column(modifier = Modifier.background(color = Color.White).padding(5.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(marker.title ?: "Default Marker Title", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                            Row()
+                            {
+                                if(isMarkerTruckPhotoEnable){
+                                    Image(
+                                        painter = painterResource(pos.truckPhotoResourceId),
+                                        contentDescription = "",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.size(150.dp)
+                                    )
+                                }
+                                Text(marker.snippet ?: "Default Marker Snippet")
                             }
-                            Text(marker.snippet ?: "Default Marker Snippet")
-                        }
-                        pos.sealStatuses?.forEach{seal -> Text(seal.sealId + " - " + seal.statusDescription)}
+                            pos.sealStatuses?.forEach{seal -> Text(seal.sealId + " - " + seal.statusDescription)}
 
-                        Button(onClick = {}) {
-                            Text("Long tap to SET")
+                            Button(onClick = {}) {
+                                Text("Long tap to SET")
+                            }
                         }
                     }
+
                 }
 
             }
 
+
         }
+
 
     }
 

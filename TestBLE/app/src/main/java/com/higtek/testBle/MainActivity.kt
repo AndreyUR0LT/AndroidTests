@@ -1,7 +1,6 @@
 package com.higtek.testBle
 
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
@@ -14,17 +13,16 @@ import android.os.Handler
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -32,24 +30,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -134,6 +126,7 @@ sealed class NavRoutes(val route: String) {
     object Login : NavRoutes("login")
     object Settings : NavRoutes("settings")
     object About : NavRoutes("about")
+    object BleDeviceScreen : NavRoutes("bleDeviceScreen")
 }
 
 @Composable
@@ -147,18 +140,26 @@ fun MainScreen(mainDataClass: MainDataClass) {
             composable(NavRoutes.Login.route) { LoginScreen(navController, mainDataClass) }
             composable(NavRoutes.Settings.route) { SettingsScreen(navController, mainDataClass)  }
             composable(NavRoutes.About.route) { About() }
+            composable(NavRoutes.BleDeviceScreen.route) { BleDeviceScreen(navController, mainDataClass) }
         }
     }
 }
 
 
+//@SuppressLint("MissingPermission")
 @Composable
-fun TagList(messages: List<String>) {
+fun TagList(
+    scanResults: List<ScanResult>,
+    mainDataClass: MainDataClass,
+    navController: NavController
+) {
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
     ) {
-        messages.forEach { message ->
+        val curContext = LocalContext.current
+
+        scanResults.forEach { scanResult ->
             Row(
                 modifier = Modifier
                     .padding(5.dp)
@@ -166,7 +167,17 @@ fun TagList(messages: List<String>) {
                     .padding(5.dp)
             )
             {
-                Text(text = message)
+                var messageToShow = "Name: " + scanResult.device.name.toString() + " Address: " + scanResult.device.address + " RSSI: " + scanResult.rssi.toString()
+
+                Text(
+                    text = messageToShow,
+                    modifier = Modifier.clickable
+                    {
+                        mainDataClass.selectedBleDevice = scanResult
+                        Toast.makeText(curContext, messageToShow, Toast.LENGTH_LONG).show()
+                        navController.navigate(NavRoutes.BleDeviceScreen.route)
+                    }
+                )
             }
         }
     }
@@ -245,7 +256,7 @@ fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TagList(mainDataClass.tags.toList())
+                TagList(mainDataClass.bleScanResults.toList(), mainDataClass, navController)
             }
 
             Row(
@@ -260,7 +271,7 @@ fun HomeScreen(navController: NavController, mainDataClass: MainDataClass) {
                         composableScope.launch {
 
                             if(!scanning)
-                                mainDataClass.tags.clear()
+                                mainDataClass.bleScanResults.clear()
 
                             if(!checkPermissions(curContext, requestMultiplePermissions)){
                                 Toast.makeText(curContext, "Please grant the application permissions", Toast.LENGTH_LONG).show()
@@ -363,26 +374,50 @@ fun startScan() {
 }
 
 private val leScanCallback: ScanCallback = object : ScanCallback() {
+
     override fun onScanResult(callbackType: Int, result: ScanResult) {
-        val device: BluetoothDevice = result.getDevice()
-        val address = device.address.toString()
+        // Found device:
+
         var isContains : Boolean = false
+        val address = result.device.address.toString()
 
-        // ...do whatever you want with this found device
-        var record = "Name: " + device.name.toString() + " Address: " + address + " RSSI: " + result.rssi.toString()
-
-        mainDataClass.tags.forEach{
-            if(it.contains(address)){
+        mainDataClass.bleScanResults.forEach{
+            if(it.device.address.contains(address)){
                 isContains = true
                 return@forEach
             }
         }
 
-        //if(!mainDataClass.tags.contains(address))
         if(!isContains)
-            mainDataClass.tags.add(record)
-
+            mainDataClass.bleScanResults.add(result)
     }
+
+    /*
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            // Found device:
+
+            val device: BluetoothDevice = result.getDevice()
+            val address = device.address.toString()
+            var isContains : Boolean = false
+
+
+            var record = "Name: " + device.name.toString() + " Address: " + address + " RSSI: " + result.rssi.toString()
+
+            mainDataClass.tags.forEach{
+                if(it.contains(address)){
+                    isContains = true
+                    return@forEach
+                }
+            }
+
+            //if(!mainDataClass.tags.contains(address))
+            if(!isContains)
+                mainDataClass.tags.add(record)
+
+
+
+        }
+    */
 
     override fun onBatchScanResults(results: List<ScanResult?>?) {
         // Ignore for now

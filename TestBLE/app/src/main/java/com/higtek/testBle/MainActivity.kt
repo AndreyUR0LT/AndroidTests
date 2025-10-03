@@ -174,7 +174,7 @@ fun TagList(
                     modifier = Modifier.clickable
                     {
                         mainDataClass.selectedBleDevice = scanResult
-                        Toast.makeText(curContext, messageToShow, Toast.LENGTH_LONG).show()
+                        //Toast.makeText(curContext, messageToShow, Toast.LENGTH_LONG).show()
                         navController.navigate(NavRoutes.BleDeviceScreen.route)
                     }
                 )

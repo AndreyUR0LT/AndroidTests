@@ -1,8 +1,6 @@
 package com.higtek.testBle
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter.STATE_CONNECTED
-import android.bluetooth.BluetoothAdapter.STATE_DISCONNECTED
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -25,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,9 +31,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -42,9 +41,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -52,17 +49,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlin.experimental.xor
 
 
 class BleOperationsViewModel : ViewModel(){
@@ -104,6 +104,13 @@ fun BleDeviceScreen(navController: NavController, mainDataClass: MainDataClass){
     val scrollState = rememberScrollState()
     val logText by bleOperationsViewModel.logText.observeAsState()
 
+    val bleUnlockPassword = rememberSaveable {
+        mutableStateOf("666666")
+    }
+
+    val isBleUnlockPasswordValid = rememberSaveable {
+        mutableStateOf(true)
+    }
 
     Scaffold(
         topBar = {
@@ -145,9 +152,49 @@ fun BleDeviceScreen(navController: NavController, mainDataClass: MainDataClass){
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
 
+            OutlinedTextField(
+                value = bleUnlockPassword.value, onValueChange = {
+                    bleUnlockPassword.value = it
+
+                    isBleUnlockPasswordValid.value = false
+
+                    if(bleUnlockPassword.value.isEmpty())
+                        return@OutlinedTextField
+
+                    if(bleUnlockPassword.value.isDigitsOnly())
+                        isBleUnlockPasswordValid.value = true
+                    else
+                        return@OutlinedTextField
+
+                    if((bleUnlockPassword.value.length == 6) || (bleUnlockPassword.value.length == 8))
+                        isBleUnlockPasswordValid.value = true
+                    else
+                        isBleUnlockPasswordValid.value = false
+                },
+                leadingIcon = {
+                    Icon(Icons.Default.Info, contentDescription = "password")
+                },
+                label = {
+                    Text(text = "Password")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp, 20.dp, 0.dp, 0.dp),
+//                colors = TextFieldDefaults.textFieldColors(
+//                    backgroundColor = if(isBleUnlockPasswordValid.value == true) Color.Green else Color.Red
+//                )
+                textStyle = TextStyle(background = if(isBleUnlockPasswordValid.value) Color.Green else Color.Red)
+            )
+
             // Connect button
             OutlinedButton(
                 onClick = {
+                    if(!isBleUnlockPasswordValid.value){
+                        Toast.makeText(curContext, "Wrong password format.", Toast.LENGTH_LONG).show()
+                        return@OutlinedButton
+                    }
+                    var dataToWrite : ByteArray = createUnlockCommand(bleUnlockPassword)
+
                     runBlocking { connectToBle(curContext, mainDataClass.selectedBleDevice) }
                 },
                 modifier = Modifier
@@ -187,6 +234,34 @@ fun BleDeviceScreen(navController: NavController, mainDataClass: MainDataClass){
     }
 
     //Text("About Page", fontSize = 30.sp)
+}
+
+fun createUnlockCommand(bleUnlockPassword: MutableState<String>): ByteArray {
+    var result = mutableListOf<Byte>()
+    result.add(0xAA.toByte()) // Protocol head
+    result.add(0x00.toByte()) // Message length
+    result.add(0x65.toByte()) // Device type
+    result.add(0x02.toByte()) // Command type
+    result.add(0x01.toByte()) // Operation code - unlocking by Bluetooth
+
+    // Add password
+    val passwordAsByteArray = bleUnlockPassword.value.toString().toByteArray(Charsets.UTF_8)
+    passwordAsByteArray.forEach { b -> result.add(b) }
+
+    // Set message length
+    result[1] = (result.size - 1).toByte()
+
+    // Add XOR
+    var xorValue : Byte = 0
+    for (i in result.indices)
+        if(i > 0)
+            xorValue = result[i].xor(xorValue)
+
+    result.add(xorValue)
+
+    result.add(0xAA.toByte()) // Protocol end
+
+    return result.toByteArray()
 }
 
 
